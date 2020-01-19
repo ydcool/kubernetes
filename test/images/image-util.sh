@@ -13,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+set -x
 set -o errexit
 set -o nounset
 set -o pipefail
@@ -25,7 +25,9 @@ KUBE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 source "${KUBE_ROOT}/hack/lib/util.sh"
 
 # Mapping of go ARCH to actual architectures shipped part of multiarch/qemu-user-static project
-declare -A QEMUARCHS=( ["amd64"]="x86_64" ["arm"]="arm" ["arm64"]="aarch64" ["ppc64le"]="ppc64le" ["s390x"]="s390x" )
+#declare -A QEMUARCHS=( ["amd64"]="x86_64" ["arm"]="arm" ["arm64"]="aarch64" ["ppc64le"]="ppc64le" ["s390x"]="s390x" )
+# TODO: just for tests
+declare -A QEMUARCHS=( ["mips64le"]="mips64el" )
 
 # Returns list of all supported architectures from BASEIMAGE file
 listArchs() {
@@ -45,11 +47,13 @@ getBaseImage() {
 # arm64, ppc64le, s390x
 build() {
   image=$1
-  if [[ -f ${image}/BASEIMAGE ]]; then
-    archs=$(listArchs "$image")
-  else
-    archs=${!QEMUARCHS[*]}
-  fi
+  # TODO: just for tests
+  # if [[ -f ${image}/BASEIMAGE ]]; then
+  #   archs=$(listArchs "$image")
+  # else
+  #   archs=${!QEMUARCHS[*]}
+  # fi
+  archs=${!QEMUARCHS[*]}
 
   kube::util::ensure-gnu-sed
 
@@ -95,6 +99,13 @@ build() {
         # Ensure we don't get surprised by umask settings
         chmod 0755 "${temp_dir}/qemu-${QEMUARCHS[$arch]}-static"
         ${SED} -i "s/CROSS_BUILD_//g" Dockerfile
+
+	      # for mips64el it uses debian base image so we use apt-get instead of apk
+        if [[ "${arch}" == "mips64le" ]];then
+          ${SED} -i "/RUN apk.*$/d" Dockerfile
+          ${SED} -i "s/^#\(RUN apt-get.*$\)/\1/" Dockerfile
+          ${SED} -i "s/^#\(  \&\& apt-get clean.*$\)/\1/" Dockerfile
+	      fi
       fi
     fi
 
@@ -149,9 +160,11 @@ bin() {
   fi
   for SRC in "$@";
   do
+  # TODO: set go env just for tests
   docker run --rm -it -v "${TARGET}:${TARGET}:Z" -v "${KUBE_ROOT}":/go/src/k8s.io/kubernetes:Z \
         golang:"${GOLANG_VERSION}" \
         /bin/bash -c "\
+                go env -w GOPROXY=https://goproxy.cn,direct && go env -w GONOSUMDB=all && \
                 cd /go/src/k8s.io/kubernetes/test/images/${SRC_DIR} && \
                 CGO_ENABLED=0 ${arch_prefix} GOARCH=${ARCH} go build -a -installsuffix cgo --ldflags '-w' -o ${TARGET}/${SRC} ./$(dirname "${SRC}")"
   done

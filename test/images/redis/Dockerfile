@@ -17,6 +17,8 @@ FROM BASEIMAGE
 CROSS_BUILD_COPY qemu-QEMUARCH-static /usr/bin/
 
 RUN apk add --no-cache redis
+#RUN apt-get update && install -y --no-install-recommends redis \
+#  && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 
 COPY redis.conf /etc/redis.conf
 

@@ -17,6 +17,8 @@ FROM BASEIMAGE
 CROSS_BUILD_COPY qemu-QEMUARCH-static /usr/bin/
 
 RUN apk add --no-cache openssl nginx-mod-http-lua nginx-mod-http-lua-upstream
+#RUN apt-get update && apt-get install -y --no-install-recommends openssl nginx-mod-http-lua nginx-mod-http-lua-upstream \
+#  && apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN mkdir -p /run/nginx
 
 ADD nginx.conf /etc/nginx/nginx.conf

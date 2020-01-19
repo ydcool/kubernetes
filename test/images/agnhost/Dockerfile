@@ -26,6 +26,9 @@ CROSS_BUILD_COPY qemu-QEMUARCH-static /usr/bin/
 # - iproute2: includes ss used in NodePort tests
 # from iperf image
 # install necessary packages: iperf, bash
+# for mips64le it uses debian as base image so these packages are not exactly the same
+#RUN apt-get update && apt-get install -y --no-install-recommends bind9utils curl netcat-openbsd iproute2 iperf \
+#  && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 RUN apk --update add bind-tools curl netcat-openbsd iproute2 iperf bash && rm -rf /var/cache/apk/* \
   && ln -s /usr/bin/iperf /usr/local/bin/iperf \
   && ls -altrh /usr/local/bin/iperf

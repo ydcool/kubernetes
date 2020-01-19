@@ -1,3 +1,4 @@
 amd64=fedora:26
 arm64=arm64v8/fedora:26
 ppc64le=ppc64le/fedora:26
+mips64le=inspurcloud/fedora-mips64le:21
